@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Check if fzf & fd is installed
+command -v fzf >/dev/null 2>&1 || { printf 'Install required fzf with `brew install fzf`\n' >&2; exit 1; }
+command -v fd >/dev/null 2>&1 || { printf 'Install required fd with `brew install fd`\n' >&2; exit 1; }
+
+# Check if directory argument is provided
+[ -z "$1" ] && { printf 'Usage: flean <dir> you want to clean from.\nUse <Tab>/<S-Tab> to select/deselect.\nUse CTRL-A to toggle selection for all items.\nUse CTRL-C to cancel.\n' >&2; exit 1; }
+
+# Search for pubspec.yaml files and allow user to select directories
+selected=$(fd -tf 'pubspec.yaml' -E '~/.pub-cache' "$1" -x echo {//} | fzf -m --reverse --bind ctrl-a:toggle-all)
+
+# Exit if no directories are selected
+[ -z "$selected" ] && echo "No project selected." && exit 0
+
+clean() {
+    flutter clean;
+    rm -rf \
+        .dart_tool \
+        .flutter-plugins \
+        .flutter-plugins-dependencies \
+        .idea \
+        .metadata \
+        .vscode \
+        android/.gradle \
+        build \
+        ios/.symlinks \
+        ios/Pods \
+        ios/build;
+}
+
+# Iterate over selected directories and clean each one
+echo "$selected" | while IFS= read -r line; do
+    (echo "Cleaning $line" && cd "$line" && clean)
+done
