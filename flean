@@ -20,6 +20,8 @@ clean() {
         .flutter-plugins \
         .flutter-plugins-dependencies \
         android/.gradle \
+        android/.kotlin \
+        android/app/.cxx \
         build \
         ios/.symlinks \
         ios/Pods \
