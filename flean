@@ -19,9 +19,6 @@ clean() {
         .dart_tool \
         .flutter-plugins \
         .flutter-plugins-dependencies \
-        .idea \
-        .metadata \
-        .vscode \
         android/.gradle \
         build \
         ios/.symlinks \
