@@ -1,34 +1,175 @@
 #!/bin/bash
+# Author: Jay Parmar
 
-# Check if fzf & fd is installed
-command -v fzf >/dev/null 2>&1 || { printf 'Install required fzf with `brew install fzf`\n' >&2; exit 1; }
-command -v fd >/dev/null 2>&1 || { printf 'Install required fd with `brew install fd`\n' >&2; exit 1; }
+# Colors for better output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Check if directory argument is provided
-[ -z "$1" ] && { printf 'Usage: flean <dir> you want to clean from.\nUse <Tab>/<S-Tab> to select/deselect.\nUse CTRL-A to toggle selection for all items.\nUse CTRL-C to cancel.\n' >&2; exit 1; }
-
-# Search for pubspec.yaml files and allow user to select directories
-selected=$(fd -tf 'pubspec.yaml' -E '~/.pub-cache' "$1" -x echo {//} | fzf -m --reverse --bind ctrl-a:toggle-all)
-
-# Exit if no directories are selected
-[ -z "$selected" ] && echo "No project selected." && exit 0
-
-clean() {
-    flutter clean;
-    rm -rf \
-        .dart_tool \
-        .flutter-plugins \
-        .flutter-plugins-dependencies \
-        android/.gradle \
-        android/.kotlin \
-        android/app/.cxx \
-        build \
-        ios/.symlinks \
-        ios/Pods \
-        ios/build;
+print_status() {
+    echo -e "${BLUE}[INFO]${NC} $1"
 }
 
-# Iterate over selected directories and clean each one
-echo "$selected" | while IFS= read -r line; do
-    (echo "Cleaning $line" && cd "$line" && clean)
-done
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
+
+# Show usage information
+show_usage() {
+    echo "🧹 Flutter Clean Tool (flean)"
+    echo "=============================="
+    echo
+    echo "Usage: flean <directory>"
+    echo
+    echo "This tool finds all Flutter projects in the specified directory"
+    echo "and lets you select which ones to clean."
+    echo
+    echo "Controls:"
+    echo "  • Use Tab/Shift+Tab to select/deselect projects"
+    echo "  • Use Ctrl+A to toggle selection for all projects"
+    echo "  • Use Ctrl+C to cancel"
+    echo
+    echo "Examples:"
+    echo "  flean ~/Development        # Clean projects in Development folder"
+    echo "  flean .                    # Clean projects in current directory"
+    echo "  flean /path/to/projects    # Clean projects in specific path"
+    echo
+}
+
+# Check dependencies with helpful error messages
+check_dependencies() {
+    local missing_deps=()
+    
+    if ! command -v flutter >/dev/null 2>&1; then
+        missing_deps+=("flutter")
+    fi
+    
+    if ! command -v fzf >/dev/null 2>&1; then
+        missing_deps+=("fzf")
+    fi
+    
+    if ! command -v fd >/dev/null 2>&1; then
+        missing_deps+=("fd")
+    fi
+    
+    if [ ${#missing_deps[@]} -gt 0 ]; then
+        print_error "Missing required dependencies: ${missing_deps[*]}"
+        echo
+        echo "Installation instructions:"
+        
+        for dep in "${missing_deps[@]}"; do
+            case $dep in
+                "flutter")
+                    echo "  • Flutter: Visit https://docs.flutter.dev/get-started/install"
+                    ;;
+                "fzf")
+                    echo "  • fzf: Run 'brew install fzf'"
+                    ;;
+                "fd")
+                    echo "  • fd: Run 'brew install fd'"
+                    ;;
+            esac
+        done
+        
+        echo
+        echo "If you don't have Homebrew, install it first:"
+        echo "  /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        exit 1
+    fi
+}
+
+# Enhanced clean function with progress
+clean() {
+    local project_name=$(basename "$PWD")
+    
+    print_status "Cleaning $project_name..."
+    
+    # Run flutter clean first
+    if flutter clean >/dev/null 2>&1; then
+        print_success "Flutter clean completed"
+    else
+        print_error "Flutter clean failed for $project_name"
+        return 1
+    fi
+    
+    # Remove additional files/directories
+    local items_to_remove=(
+        ".dart_tool"
+        "android/.gradle"
+        "android/.kotlin"
+        "android/app/.cxx"
+        "build"
+        "ios/.symlinks"
+        "ios/Pods"
+    )
+    
+    local removed_count=0
+    
+    for item in "${items_to_remove[@]}"; do
+        if [ -e "$item" ]; then
+            rm -rf "$item"
+            ((removed_count++))
+        fi
+    done
+    
+    print_success "Cleaned $project_name ($removed_count additional items removed)"
+    echo
+}
+
+# Main script logic
+main() {
+    # Check if help is requested
+    if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+        show_usage
+        exit 0
+    fi
+    
+    # Check if directory argument is provided
+    if [ -z "$1" ]; then
+        print_error "No directory specified"
+        echo
+        show_usage
+        exit 1
+    fi
+    
+    # Check if directory exists
+    if [ ! -d "$1" ]; then
+        print_error "Directory '$1' does not exist"
+        exit 1
+    fi
+    
+    # Check dependencies
+    check_dependencies
+    
+    print_status "Searching for Flutter projects in: $1"
+    
+    # Search for pubspec.yaml files and allow user to select directories
+    selected=$(fd -tf 'pubspec.yaml' -E '~/.pub-cache' "$1" -x echo {//} | fzf -m --reverse --bind ctrl-a:toggle-all --header="Select Flutter projects to clean (Tab/Shift+Tab to select/deselect, Ctrl+A for all)")
+    
+    # Exit if no directories are selected
+    if [ -z "$selected" ]; then
+        print_status "No projects selected. Exiting."
+        exit 0
+    fi
+    
+    # Count selected projects
+    project_count=$(echo "$selected" | wc -l | tr -d ' ')
+    print_status "Cleaning $project_count project(s)..."
+    echo
+    
+    # Iterate over selected directories and clean each one
+    echo "$selected" | while IFS= read -r line; do
+        (cd "$line" && clean) || print_error "Failed to clean $line"
+    done
+    
+    print_success "🎉 All selected projects have been cleaned!"
+}
+
+# Run main function with all arguments
+main "$@"
