@@ -8,7 +8,7 @@ Stop running `flutter clean` on each project individually. `flean` automatically
 
 ```bash
 # Install
-git clone https://github.com/YOUR_USERNAME/flean.git
+git clone https://github.com/wrteam-jay/flean.git
 cd flean
 ./install.sh
 
