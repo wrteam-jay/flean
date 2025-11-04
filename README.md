@@ -1,155 +1,115 @@
-# flean - Flutter Clean Utility
+# flean
 
-A powerful command-line utility for cleaning multiple Flutter projects at once. `flean` helps you quickly clean build artifacts, caches, and generated files from your Flutter projects with an interactive selection interface.
+> A command-line tool for cleaning multiple Flutter projects at once
+
+Stop running `flutter clean` on each project individually. `flean` automatically finds all Flutter projects in a directory and lets you select which ones to clean with an interactive interface.
+
+## Quick Start
+
+```bash
+# Install
+git clone https://github.com/YOUR_USERNAME/flean.git
+cd flean
+./install.sh
+
+# Use
+flean ~/Development
+```
 
 ## Features
 
-- 🔍 **Smart Project Discovery** - Automatically finds all Flutter projects in a directory
-- 🎯 **Interactive Selection** - Choose which projects to clean using a fuzzy finder interface
-- 🧹 **Comprehensive Cleaning** - Removes build artifacts, Gradle cache, Kotlin cache, CocoaPods, and more
-- 🌈 **Beautiful Interface** - Colored output with clear progress indicators
-- ⚡ **Fast & Efficient** - Parallel cleaning with detailed feedback
-- 🔧 **Easy Installation** - Automated dependency management
+- **Find all Flutter projects** in a directory automatically
+- **Interactive selection** with fuzzy search (powered by fzf)
+- **Deep clean** - removes more than `flutter clean` alone
+- **Batch operations** - clean multiple projects at once
+- **Colored output** with progress indicators
 
 ## What Gets Cleaned
 
-`flean` performs a comprehensive clean that goes beyond `flutter clean`:
+Goes beyond `flutter clean` by removing:
 
-- **Flutter artifacts**: `.dart_tool`, build files
-- **Android**: `.gradle`, `.kotlin`, `.cxx` directories
-- **iOS**: `Pods`, `.symlinks`, build directories
-- **Generated files**: All build and cache directories
+- `.dart_tool` and build directories
+- `android/.gradle` and `android/.kotlin`
+- `android/app/.cxx`
+- `ios/Pods` and `ios/.symlinks`
 
 ## Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd flean
-   ```
+**Requirements:** macOS with Homebrew (Linux should work but untested)
 
-2. **Run the installer:**
-   ```bash
-   ./install.sh
-   ```
+The installer handles everything:
+```bash
+./install.sh
+```
 
-The installer will automatically:
-- Check for Homebrew (required for dependencies)
-- Install missing dependencies (`fzf`, `fd`)
-- Install the `flean` command to your system
-- Update your shell configuration
-- Verify the installation
+It will:
+- Check for required tools (Flutter, Homebrew)
+- Install `fzf` and `fd` if needed
+- Add `flean` to your PATH
+- Configure your shell
 
-## Requirements
-
-- **macOS** (tested on macOS, may work on Linux)
-- **Homebrew** - Package manager for macOS
-- **Flutter** - Flutter SDK must be installed and in PATH
-- **fzf** - Command-line fuzzy finder (auto-installed)
-- **fd** - Fast alternative to find command (auto-installed)
+After installation, restart your terminal or run:
+```bash
+source ~/.zshrc  # or ~/.bashrc for bash
+```
 
 ## Usage
 
-### Basic Usage
-
 ```bash
-flean <directory>
+flean <directory>              # Clean projects in directory
+flean .                        # Clean projects in current directory
+flean ~/Development            # Clean all projects in Development folder
 ```
 
-### Examples
+**Interactive controls:**
+- `Tab` / `Shift+Tab` - Select/deselect projects
+- `Ctrl+A` - Select all
+- `Enter` - Start cleaning
+- `Ctrl+C` - Cancel
 
-```bash
-# Clean projects in your Development folder
-flean ~/Development
-
-# Clean projects in current directory
-flean .
-
-# Clean projects in a specific path
-flean /path/to/flutter/projects
-```
-
-### Interactive Controls
-
-When the project selection interface appears:
-
-- **Tab/Shift+Tab** - Select/deselect projects
-- **Ctrl+A** - Toggle selection for all projects
-- **Ctrl+C** - Cancel the operation
-- **Enter** - Start cleaning selected projects
-
-### Getting Help
-
-```bash
-flean --help
-# or
-flean -h
-```
-
-## Example Output
+## Example
 
 ```
 🧹 Flutter Clean Tool (flean)
 ==============================
 
 [INFO] Searching for Flutter projects in: ~/Development
-[INFO] Cleaning 3 project(s)...
+[INFO] Cleaning 2 project(s)...
 
-[INFO] Cleaning my_flutter_app...
+[INFO] Cleaning my_app...
 [SUCCESS] Flutter clean completed
-[SUCCESS] Cleaned my_flutter_app (5 additional items removed)
-
-[INFO] Cleaning another_project...
-[SUCCESS] Flutter clean completed
-[SUCCESS] Cleaned another_project (4 additional items removed)
+[SUCCESS] Cleaned my_app (5 additional items removed)
 
 🎉 All selected projects have been cleaned!
 ```
 
 ## Troubleshooting
 
-### Permission Issues
-If you encounter permission errors, try running the installer with sudo:
+**Command not found after install?**
+Restart your terminal or run `source ~/.zshrc`
+
+**Missing dependencies?**
+The installer should handle this, but you can manually install:
 ```bash
-sudo ./install.sh
+brew install fzf fd
 ```
 
-### Missing Dependencies
-If you see dependency errors, ensure Homebrew is installed:
-```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-```
+**Permission errors?**
+Try: `sudo ./install.sh`
 
-### Command Not Found
-If `flean` command is not found after installation:
-1. Restart your terminal
-2. Or manually source your shell configuration:
-   ```bash
-   source ~/.zshrc  # for zsh
-   source ~/.bashrc # for bash
-   ```
+## Why?
 
-### Flutter Not Found
-Ensure Flutter is properly installed and in your PATH:
-```bash
-flutter doctor
-```
+If you work with multiple Flutter projects, you know the pain:
+- Build caches pile up and eat disk space
+- Need to cd into each project to run `flutter clean`
+- `flutter clean` doesn't remove everything (Gradle/Kotlin caches, Pods, etc.)
 
-## Shell Compatibility
-
-The installer automatically detects your shell and updates the appropriate configuration file:
-- **Zsh**: Updates `~/.zshrc`
-- **Bash**: Updates `~/.bashrc` or `~/.bash_profile`
-- **Other shells**: Updates `~/.profile`
+`flean` solves all of this in one command.
 
 ## Contributing
 
-Feel free to submit issues, feature requests, or pull requests to improve `flean`.
+Issues and PRs welcome!
 
 ## License
 
-This project is open source. Please check the repository for license details.
-
----
-
-**Made with ❤️ for Flutter developers**
+MIT - see [LICENSE](LICENSE) file for details
